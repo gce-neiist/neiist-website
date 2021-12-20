@@ -23,6 +23,10 @@ import AdminAreasPage from './pages/AdminAreasPage';
 import AdminThesesPage from './pages/AdminThesesPage';
 import AdminElectionsPage from './pages/AdminElectionsPage';
 
+import ArticleCreatePage from './pages/ArticleCreatePage';
+import ArticleListPage from './pages/ArticleListPage';
+import ArticlePage from './pages/ArticlePage';
+
 import UserDataContext from './UserDataContext';
 
 import 'bootstrap/dist/css/bootstrap.min.css'; // importing required bootstrap styles
@@ -133,6 +137,16 @@ const App = () => {
               <AdminElectionsPage />
             </AdminRoute>
 
+            <ArticleRoute exact path="/artigos">
+              <ArticleListPage />
+            </ArticleRoute>
+            <ArticleRoute path="/artigos/novo">
+              <ArticleCreatePage />
+            </ArticleRoute>
+            <ArticleRoute path="/artigos/id">
+              <ArticlePage />
+            </ArticleRoute>
+
             <Route path="/*">
               <Redirect to="/" />
             </Route>
@@ -182,5 +196,11 @@ const AdminRoute = ({ exact, path, children }) => {
   }
   return null;
 };
+
+const ArticleRoute = ({ exact, path, children }) => (
+  <Route exact={exact} path={path}>
+    {children}
+  </Route>
+);
 
 export default App;
