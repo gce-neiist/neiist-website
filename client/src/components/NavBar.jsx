@@ -48,6 +48,10 @@ const NavBar = () => {
             Admin
           </AdminNavLink>
 
+          <Nav.Link as={Link} to="/artigos">
+            Artigos
+          </Nav.Link>
+
         </Nav>
         <Nav style={{ marginLeft: 'auto' }}>
           <LoginLogout userData={userData} setUserData={setUserData} />
