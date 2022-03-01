@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
+import {Button, Form, Tabs, Tab, Container} from 'react-bootstrap';
+import ReactMarkdown from 'react-markdown'
 
 const ArticleCreatePage = () => (
   <>
@@ -32,7 +32,7 @@ const CreateArticleView = () => {
             <Form.Label>Imagem de capa</Form.Label>
             <Form.Control required type="file" />
           </Form.Group>
-
+          
           <Form.Group className="mb-3">
             <Form.Label>Descrição</Form.Label>
             <Form.Control
@@ -43,17 +43,26 @@ const CreateArticleView = () => {
               onChange={(event) => setDescription(event.target.value)}
             />
           </Form.Group>
+          
+          <Tabs defaultActiveKey="markdown" id="markdown-preview-tabs" className="mb-3">
+            <Tab eventKey="markdown" title="Markdown">
+              <Form.Group className="mb-3">
+                <Form.Control
+                  required
+                  as="textarea"
+                  rows={20}
+                  value={markdown}
+                  onChange={(event) => setMarkdown(event.target.value)}
+                />
+              </Form.Group>
+            </Tab>
+            <Tab eventKey="preview" title="Preview">
+                <Container>
+                <ReactMarkdown>{markdown}</ReactMarkdown>
+                </Container>
+            </Tab>
+          </Tabs>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Markdown</Form.Label>
-            <Form.Control
-              required
-              as="textarea"
-              rows={20}
-              value={markdown}
-              onChange={(event) => setMarkdown(event.target.value)}
-            />
-          </Form.Group>
           <Button
             variant="primary"
             type="submit"

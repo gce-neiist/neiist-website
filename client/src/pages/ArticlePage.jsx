@@ -1,6 +1,6 @@
 import React from 'react';
-import Image from 'react-bootstrap/Image';
-import Button from 'react-bootstrap/Button';
+import {Image, Button} from 'react-bootstrap';
+import ReactMarkdown from 'react-markdown'
 
 import neiist from '../images/neiist_banner.jpg';
 
@@ -18,9 +18,9 @@ const ArticleView = () => (
         Article description
       </p>
       <Image src={neiist} fluid />
-      <p>
-        Render markdown of the article here
-      </p>
+      <ReactMarkdown>
+        ## article
+      </ReactMarkdown>
 
       <div className="d-grid gap-2">
         <Button
