@@ -20,7 +20,7 @@ const createArticles = async () => {
 
 const createArticle = async (article) => {
   try {
-    await db.query('INSERT INTO articles(title, "date", description, body) VALUES($1, $2, $3)', [article.title, article.date, article.description, article.body]);
+    await db.query('INSERT INTO articles(title, "date", description, body) VALUES($1, $2, $3, $4)', [article.title, article.date, article.description, article.body]);
   } catch (err) {
     console.error(err);
   }

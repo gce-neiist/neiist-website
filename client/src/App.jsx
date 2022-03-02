@@ -137,15 +137,15 @@ const App = () => {
               <AdminElectionsPage />
             </AdminRoute>
 
-            <ArticleRoute exact path="/artigos">
+            <Route exact path="/artigos">
               <ArticleListPage />
-            </ArticleRoute>
-            <ArticleRoute path="/artigos/novo">
+            </Route>
+            <Route path="/artigos/novo">
               <ArticleCreatePage />
-            </ArticleRoute>
-            <ArticleRoute path="/artigos/id">
+            </Route>
+            <Route path="/artigos/:id">
               <ArticlePage />
-            </ArticleRoute>
+            </Route>
 
             <Route path="/*">
               <Redirect to="/" />
@@ -196,11 +196,5 @@ const AdminRoute = ({ exact, path, children }) => {
   }
   return null;
 };
-
-const ArticleRoute = ({ exact, path, children }) => (
-  <Route exact={exact} path={path}>
-    {children}
-  </Route>
-);
 
 export default App;
