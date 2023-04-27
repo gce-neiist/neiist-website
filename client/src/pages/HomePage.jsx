@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {Row, Col} from 'react-bootstrap';
+import { registerPageView } from '../components/functions/googleAnalytics';
 
 import Hero from '../components/homepage/Hero';
 import Objectives from '../components/homepage/Objectives';
@@ -10,6 +11,11 @@ import Mission from '../components/homepage/Mission';
 import style from './css/HomePage.module.css'
 
 const HomePage = () => {
+
+  useEffect(() => {
+    registerPageView(window.location);
+  }, []);
+
   return (
     <div className={style.global}>
       <Hero />

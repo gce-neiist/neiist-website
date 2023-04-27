@@ -5,6 +5,7 @@ import {
   Route,
   Navigate
 } from "react-router-dom";
+import ReactGA from 'react-ga';
 
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css"; // importing required bootstrap styles
@@ -26,6 +27,11 @@ const AdminThesesPage = lazy(() => import("./pages/AdminThesesPage"));
 const AdminElectionsPage = lazy(() => import("./pages/AdminElectionsPage"));
 const GacPage = lazy(() => import("./pages/GacPage"));
 const CollabsPage = lazy(() => import("./pages/CollabsPage"));
+
+// Google Analytics
+ReactGA.initialize(process.env.REACT_APP_GOOGLE_ANALYTICS_ID, {
+  debug: true
+});
 
 const Error = ({ error, errorDescription }) => (
 	<>

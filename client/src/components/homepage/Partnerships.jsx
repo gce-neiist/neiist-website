@@ -1,5 +1,6 @@
 import BlueWhiteBox from "./BlueWhiteBox";
 import { Row, Col } from "react-bootstrap";
+import { EventAction, EventType, registerEvent } from "../functions/googleAnalytics";
 
 import mercedesBenzIo from "../../images/partnerships/mercedesBenzIo.png";
 import auren from "../../images/partnerships/auren.png";
@@ -13,12 +14,23 @@ const Partnerships = () => {
 			<BlueWhiteBox>
 				<Row className={style.partners}>
 					<Col>
-						<a href="https://www.mercedes-benz.io/" target="_blank">
-							<img src={mercedesBenzIo} style={{ width: "50%", scale: "1.5" }} />
+						<a
+							onClick={() => registerEvent(EventType.CLICK, EventAction.MERCEDES_BENZ_IO)}
+							href="https://www.mercedes-benz.io/"
+							target="_blank"
+						>
+							<img
+								src={mercedesBenzIo}
+								style={{ width: "50%", scale: "1.5" }}
+							/>
 						</a>
 					</Col>
 					<Col>
-						<a href="https://auren.com/pt/" target="_blank">
+						<a
+							onClick={() => registerEvent(EventType.CLICK, EventAction.AUREN)}
+							href="https://auren.com/pt/"
+							target="_blank"
+						>
 							<img src={auren} style={{ width: "50%", scale: "0.75" }} />
 						</a>
 					</Col>
