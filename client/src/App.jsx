@@ -26,6 +26,7 @@ const AdminThesesPage = lazy(() => import("./pages/AdminThesesPage"));
 const AdminElectionsPage = lazy(() => import("./pages/AdminElectionsPage"));
 const GacPage = lazy(() => import("./pages/GacPage"));
 const CollabsPage = lazy(() => import("./pages/CollabsPage"));
+const StudentPage = lazy(() => import("./pages/StudentPage"));
 
 const Error = ({ error, errorDescription }) => (
 	<>
@@ -119,6 +120,7 @@ const DefinedRoutes = () => (
     <Route path="/sobre_nos" element={<AboutPage />} />
     <Route path="/estatutos" element={<RulesPage />} />
     <Route path="/contactos" element={<ContactsPage />} />
+    <Route path="/estudante" element={<StudentPage />} />
 
     {/* AUTHENTICATED */}
     <Route
