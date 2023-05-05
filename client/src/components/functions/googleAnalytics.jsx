@@ -1,4 +1,4 @@
-import ReactGA from "react-ga";
+import ReactGA from "react-ga4";
 
 const EventType = {
 	CLICK: "click",
@@ -10,6 +10,15 @@ const EventAction = {
 	AUREN: "Clicked on partnerships image from Auren",
 };
 
+const initializeGa = () => {
+	ReactGA.initialize(process.env.REACT_APP_GOOGLE_ANALYTICS_ID, {
+		testMode: true,
+	});
+	console.log(ReactGA.isInitialized)
+	console.log(process.env.REACT_APP_GOOGLE_ANALYTICS_ID)
+	console.log("hello")
+};
+
 const registerEvent = (category, action) => {
 	ReactGA.event({
 		category: category,
@@ -17,8 +26,18 @@ const registerEvent = (category, action) => {
 	});
 };
 
-const registerPageView = (localtion) => {
-	ReactGA.pageview(localtion.pathname + localtion.search);
+const registerPageView = (location) => {
+	ReactGA.send({
+		hitType: "pageview",
+		page: location.pathname,
+		title: location.pathname,
+	});
 };
 
-export { EventType, EventAction, registerEvent, registerPageView };
+export {
+	EventType,
+	EventAction,
+	initializeGa,
+	registerEvent,
+	registerPageView,
+};

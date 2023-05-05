@@ -1,11 +1,5 @@
-import React, { useState, useEffect, useContext, Suspense, lazy } from 'react';
-import {
-	BrowserRouter,
-  Routes,
-  Route,
-  Navigate
-} from "react-router-dom";
-import ReactGA from 'react-ga';
+import React, { useState, useEffect, useContext, Suspense, lazy } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css"; // importing required bootstrap styles
@@ -14,6 +8,7 @@ import UserDataContext from "./UserDataContext";
 
 import Layout from "./components/Layout";
 import LoadSpinner from "./hooks/loadSpinner";
+import { initializeGa } from "./components/functions/googleAnalytics";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
@@ -29,9 +24,7 @@ const GacPage = lazy(() => import("./pages/GacPage"));
 const CollabsPage = lazy(() => import("./pages/CollabsPage"));
 
 // Google Analytics
-ReactGA.initialize(process.env.REACT_APP_GOOGLE_ANALYTICS_ID, {
-  debug: true
-});
+initializeGa();
 
 const Error = ({ error, errorDescription }) => (
 	<>
@@ -43,69 +36,67 @@ const Error = ({ error, errorDescription }) => (
 const App = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const [userData, setUserData] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+	const [isLoaded, setIsLoaded] = useState(false);
 
-  const logout = () => {
-    window.sessionStorage.removeItem('accessToken');
-    setUserData(null);
-    return null;
-  };
+	const logout = () => {
+		window.sessionStorage.removeItem("accessToken");
+		setUserData(null);
+		return null;
+	};
 
-  const authFromCode = async () => {
-    const code = urlParams.get('code');
-    const accessTokenResponse = await fetch(`/api/auth/accessToken/${code}`);
-    const accessToken = await accessTokenResponse.text();
-    window.sessionStorage.setItem('accessToken', accessToken);
-  };
+	const authFromCode = async () => {
+		const code = urlParams.get("code");
+		const accessTokenResponse = await fetch(`/api/auth/accessToken/${code}`);
+		const accessToken = await accessTokenResponse.text();
+		window.sessionStorage.setItem("accessToken", accessToken);
+	};
 
-  const tryAuthFromSessionStorage = async () => {
-    const accessToken = window.sessionStorage.getItem('accessToken');
-    if (!accessToken) return null;
+	const tryAuthFromSessionStorage = async () => {
+		const accessToken = window.sessionStorage.getItem("accessToken");
+		if (!accessToken) return null;
 
-    const userDataResponse = await fetch(`/api/auth/userData/${accessToken}`);
-    if (userDataResponse.status === 401) return logout();
+		const userDataResponse = await fetch(`/api/auth/userData/${accessToken}`);
+		if (userDataResponse.status === 401) return logout();
 
-    const userDataJson = await userDataResponse.json();
-    setUserData(userDataJson);
-    return userDataJson;
-  };
+		const userDataJson = await userDataResponse.json();
+		setUserData(userDataJson);
+		return userDataJson;
+	};
 
-  const Redirect = (user) => window.location.replace(
-    user?.isCollab ? '/collab':
-    user?.isMember ? '/socios':
-    '/'
-  );
+	const Redirect = (user) =>
+		window.location.replace(
+			user?.isCollab ? "/collab" : user?.isMember ? "/socios" : "/"
+		);
 
-  useEffect(() => {
-    async function auth() {
-      if (urlParams.has('code')) {
-        await authFromCode();
-        const user = await tryAuthFromSessionStorage();
-        await Redirect(user);
-      }
-      else {
-        await tryAuthFromSessionStorage();
-        setIsLoaded(true);
-      }
-    }
-    auth();
-  }, []);
+	useEffect(() => {
+		async function auth() {
+			if (urlParams.has("code")) {
+				await authFromCode();
+				const user = await tryAuthFromSessionStorage();
+				await Redirect(user);
+			} else {
+				await tryAuthFromSessionStorage();
+				setIsLoaded(true);
+			}
+		}
+		auth();
+	}, []);
 
-  if (!isLoaded) {
-    return <LoadSpinner />;
-  }
+	if (!isLoaded) {
+		return <LoadSpinner />;
+	}
 
-  if (urlParams.has('error')) {
-    return (
-      <Error
-        error={urlParams.get('error')}
-        errorDescription={urlParams.get('error_description')}
-      />
-    );
-  }
+	if (urlParams.has("error")) {
+		return (
+			<Error
+				error={urlParams.get("error")}
+				errorDescription={urlParams.get("error_description")}
+			/>
+		);
+	}
 
-  return (
-    <UserDataContext.Provider value={{ userData, setUserData }}>
+	return (
+		<UserDataContext.Provider value={{ userData, setUserData }}>
 			<BrowserRouter>
 				<Layout>
 					<Suspense fallback={<LoadSpinner />}>
@@ -114,84 +105,87 @@ const App = () => {
 				</Layout>
 			</BrowserRouter>
 		</UserDataContext.Provider>
-  );
+	);
 };
 
 const DefinedRoutes = () => (
-  <Routes>
-    {/* PUBLIC */}
-    <Route exact path="/" element={<HomePage />} />
+	<Routes>
+		{/* PUBLIC */}
+		<Route exact path="/" element={<HomePage />} />
 
-    <Route path="/sobre_nos" element={<AboutPage />} />
-    <Route path="/estatutos" element={<RulesPage />} />
-    <Route path="/contactos" element={<ContactsPage />} />
+		<Route path="/sobre_nos" element={<AboutPage />} />
+		<Route path="/estatutos" element={<RulesPage />} />
+		<Route path="/contactos" element={<ContactsPage />} />
 
-    {/* AUTHENTICATED */}
-    <Route
-      path="/socio"
-      element={<ActiveTecnicoStudentRoute children={<MemberPage />} />}
-    />
-    <Route
-      path="/thesismaster"
-      element={<ActiveLMeicStudentRoute children={<ThesisMasterPage />} />}
-    />
+		{/* AUTHENTICATED */}
+		<Route
+			path="/socio"
+			element={<ActiveTecnicoStudentRoute children={<MemberPage />} />}
+		/>
+		<Route
+			path="/thesismaster"
+			element={<ActiveLMeicStudentRoute children={<ThesisMasterPage />} />}
+		/>
 
-    {/* ADMIN */}
-    <Route
-      exact
-      path="/admin"
-      element={<AdminRoute children={<AdminMenuPage />} />}
-    />
-    <Route
-      path="/admin/areas"
-      element={<AdminRoute children={<AdminAreasPage />} />}
-    />
-    <Route
-      path="/admin/theses"
-      element={<AdminRoute children={<AdminThesesPage />} />}
-    />
-    <Route
-      path="/admin/elections"
-      element={<AdminRoute children={<AdminElectionsPage />} />}
-    />
+		{/* ADMIN */}
+		<Route
+			exact
+			path="/admin"
+			element={<AdminRoute children={<AdminMenuPage />} />}
+		/>
+		<Route
+			path="/admin/areas"
+			element={<AdminRoute children={<AdminAreasPage />} />}
+		/>
+		<Route
+			path="/admin/theses"
+			element={<AdminRoute children={<AdminThesesPage />} />}
+		/>
+		<Route
+			path="/admin/elections"
+			element={<AdminRoute children={<AdminElectionsPage />} />}
+		/>
 
-    <Route
-      path="/collab"
-      element={<CollabRoute children={<CollabsPage />} />}
-    />
+		<Route
+			path="/collab"
+			element={<CollabRoute children={<CollabsPage />} />}
+		/>
 
-    <Route path="/mag" element={<GacRoute children={<GacPage />} />} />
+		<Route path="/mag" element={<GacRoute children={<GacPage />} />} />
 
-    {/* FALLBACK */}
-    <Route path="/*" element={<Navigate to="/" replace />} />
-  </Routes>
+		{/* FALLBACK */}
+		<Route path="/*" element={<Navigate to="/" replace />} />
+	</Routes>
 );
 
 const PrivateRoute = ({ condition, children }) => {
-  const { userData } = useContext(UserDataContext);
-  
-  return (userData && userData[condition])
-    ? children : <Navigate to="/" replace />;
+	const { userData } = useContext(UserDataContext);
+
+	return userData && userData[condition] ? (
+		children
+	) : (
+		<Navigate to="/" replace />
+	);
 };
 
 const ActiveTecnicoStudentRoute = ({ children }) => (
-	<PrivateRoute children={children} condition={'isActiveTecnicoStudent'} />
+	<PrivateRoute children={children} condition={"isActiveTecnicoStudent"} />
 );
 
 const ActiveLMeicStudentRoute = ({ children }) => (
-  <PrivateRoute children={children} condition={'isActiveLMeicStudent'} />
+	<PrivateRoute children={children} condition={"isActiveLMeicStudent"} />
 );
 
 const GacRoute = ({ children }) => (
-  <PrivateRoute children={children} condition={'isGacMember'} />
+	<PrivateRoute children={children} condition={"isGacMember"} />
 );
 
 const CollabRoute = ({ children }) => (
-  <PrivateRoute children={children} condition={'isCollab'} />
+	<PrivateRoute children={children} condition={"isCollab"} />
 );
 
 const AdminRoute = ({ children }) => (
-  <PrivateRoute children={children} condition={'isAdmin'} />
+	<PrivateRoute children={children} condition={"isAdmin"} />
 );
 
 export default App;
