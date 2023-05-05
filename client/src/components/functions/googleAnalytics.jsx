@@ -11,12 +11,7 @@ const EventAction = {
 };
 
 const initializeGa = () => {
-	ReactGA.initialize(process.env.REACT_APP_GOOGLE_ANALYTICS_ID, {
-		testMode: true,
-	});
-	console.log(ReactGA.isInitialized)
-	console.log(process.env.REACT_APP_GOOGLE_ANALYTICS_ID)
-	console.log("hello")
+	ReactGA.initialize(process.env.REACT_APP_GOOGLE_ANALYTICS_ID);
 };
 
 const registerEvent = (category, action) => {

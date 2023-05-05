@@ -8,7 +8,7 @@ import Activities from '../components/homepage/Activities';
 import Sinfo from '../components/homepage/Sinfo';
 import Partnerships from '../components/homepage/Partnerships';
 import Mission from '../components/homepage/Mission';
-import style from './css/HomePage.module.css'
+import style from './css/HomePage.module.css';
 
 const HomePage = () => {
 
