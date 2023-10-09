@@ -3,17 +3,16 @@ const db = require("./database");
 const createCollaborators = async () => {
   try {
     await db.query(
-      `CREATE TABLE collaborators(
-        "id" SERIAL PRIMARY KEY,
-        "username" varchar(10) NOT NULL,
-        "campus" varchar(1) NOT NULL,
-        "phone" varchar(15),
-        "teams" varchar(50) NOT NULL,
-        "role" varchar(25) DEFAULT 'COLLAB',
-        "subRole" varchar(100),
-        "fromDate" date NOT NULL,
-        "toDate" date NOT NULL
-      )`
+      `CREATE TABLE neiist.collaborators(
+        "istId" varchar(10) REFERENCES public.users("istId"),
+        teams text[] NOT NULL,
+        role text DEFAULT 'COLLAB' NOT NULL,
+        "subRole" text,
+        "fromDate" date DEFAULT CURRENT_DATE NOT NULL,
+        "toDate" date DEFAULT '9999-12-31' NOT NULL,
+      
+        PRIMARY KEY ("istId", "fromDate", "toDate")
+      );`
     );
   } catch (err) {
     if (err.code !== "42P07") {
@@ -25,12 +24,12 @@ const createCollaborators = async () => {
 const createCurrentCollabView = async () => {
   try {
     await db.query(
-      `CREATE OR REPLACE VIEW curr_collaborators AS
+      `CREATE OR REPLACE VIEW neiist.curr_collaborators AS
         SELECT *
-        FROM collaborators
+        FROM neiist.collaborators
         WHERE "fromDate" <= current_date::date
           AND "toDate" > current_date::date;
-    `
+      `
     );
   } catch (err) {
     console.error(err);
@@ -40,13 +39,10 @@ const createCurrentCollabView = async () => {
 const createAdminsView = async () => {
   try {
     await db.query(
-      `CREATE OR REPLACE VIEW admins AS
-        SELECT *
-        FROM curr_collaborators
-        WHERE "teams" LIKE '%COOR-DEV%'
-        OR ("role" LIKE '%Direção%'
-          AND "subRole" LIKE '%Presidente%');
-      `
+      `CREATE OR REPLACE VIEW public.admins AS
+        SELECT "istId"
+        FROM public.users
+        WHERE 'admin'=ANY(permission);`
     );
   } catch (err) {
     console.error(err);
@@ -56,14 +52,11 @@ const createAdminsView = async () => {
 const createGACMembersView = async () => {
   try {
     await db.query(
-      `CREATE OR REPLACE VIEW "gacMembers" AS
-        SELECT *
-        FROM curr_collaborators
-        WHERE ("teams" NOT LIKE '%SINFO%'
-          AND "role" LIKE '%Direção%')
-        OR ("role" LIKE '%MAG%'
-          AND "subRole" LIKE '%Presidente%');
-      `
+      `CREATE OR REPLACE VIEW public.gac_members AS
+      SELECT "istId"
+      FROM public.users
+      WHERE 'gac'=ANY(permission)
+        OR 'admin'=ANY(permission);`
     );
   } catch (err) {
     console.error(err);
@@ -73,10 +66,10 @@ const createGACMembersView = async () => {
 const createCoordenatorsView = async () => {
   try {
     await db.query(
-      `CREATE OR REPLACE VIEW coordenators AS
-        SELECT *
-        FROM curr_collaborators
-        WHERE "teams" LIKE '%COOR%';`
+      `CREATE OR REPLACE VIEW neiist.coordenators AS
+      SELECT *
+      FROM neiist.curr_collaborators
+       WHERE (SELECT unnest("teams")) LIKE '%COOR%';`
     );
   } catch (err) {
     console.error(err);
@@ -86,9 +79,9 @@ const createCoordenatorsView = async () => {
 const addCollaborator = async (username, collab) => {
   try {
     await db.query(
-      `INSERT INTO collaborators(username, campus, "teams", "fromDate", "toDate")
-      VALUES($1, $2, $3,current_date, '9999-12-31')`,
-      [username, collab.campus, collab.teams]
+      `INSERT INTO neiist.collaborators("istId", teams)
+      VALUES($1, $2::text[])`,
+      [username, collab.teams]
     );
   } catch (err) {
     console.error(err);
@@ -98,7 +91,7 @@ const addCollaborator = async (username, collab) => {
 const removeCollaborator = async (username) => {
   try {
     await db.query(
-      `UPDATE curr_collaborators SET "toDate" = current_date WHERE "username" = $1`,
+      `UPDATE neiist.curr_collaborators SET "toDate" = current_date WHERE "istId" = $1`,
       [username]
     );
   } catch (err) {
@@ -110,9 +103,9 @@ const getCurrentCollab = async (username) => {
   let collab;
   try {
     const collabResult = await db.query(
-      `SELECT username, "teams" 
-      FROM curr_collaborators
-      WHERE username=$1;`,
+      `SELECT "istId", teams 
+      FROM neiist.curr_collaborators
+      WHERE "istId"=$1;`,
       [username]
     );
     [collab] = collabResult.rows;
@@ -126,10 +119,12 @@ const getCurrentCollabs = async () => {
   let collabs;
   try {
     const collabsResult = await db.query(
-      `SELECT curr_collaborators.username, name, email, campus, role, "subRole", "teams"
-      FROM curr_collaborators FULL JOIN members
-      ON curr_collaborators.username=members.username
-      WHERE curr_collaborators.username IS NOT NULL
+      `SELECT
+        neiist.curr_collaborators."istId",
+        name, email, campus, role, "subRole", "teams"
+      FROM (neiist.curr_collaborators NATURAL JOIN public.users) as cc
+      FULL JOIN members.users as m ON cc."istId"=m."istId"
+      WHERE cc.username IS NOT NULL
       ORDER BY name ASC`
     );
     collabs = collabsResult.rows;
@@ -146,8 +141,9 @@ const getCurrentCollabsResume = async () => {
       `SELECT CONCAT(
         split_part(m.name, ' ', 1), ' ', reverse(split_part(reverse(m.name), ' ', 1))
         ) AS name, cc.teams
-      FROM curr_collaborators as cc FULL JOIN members as m ON cc.username=m.username
-      WHERE m.name IS NOT NULL AND cc.username IS NOT NULL
+      FROM (neiist.curr_collaborators NATURAL JOIN public.users) as cc
+      FULL JOIN members.users as m ON cc.username=m.username
+      WHERE m.name IS NOT NULL AND cc."istId" IS NOT NULL
       ORDER BY name ASC;`
     );
     collabs = collabsResult.rows;
@@ -164,9 +160,10 @@ const getCurrentTeamMembers = async (teamsAux) => {
  
   try {
     const collabsResult = await db.query(
-      `SELECT curr_collaborators.username, name, campus, teams
-      FROM curr_collaborators FULL JOIN members
-      ON curr_collaborators.username=members.username
+      `SELECT cc."istId", name, campus, teams
+      FROM (neiist.curr_collaborators NATURAL JOIN public.users) as cc
+      FULL JOIN members.users as m
+      ON cc."istId"=m."istId"
       WHERE teams LIKE ANY(string_to_array($1,','))
       ORDER BY name ASC`,
       [teams]
@@ -182,9 +179,9 @@ const checkAdmin = async (username) => {
   let admin;
   try {
     const adminResult = await db.query(
-      `SELECT username
-      FROM admins
-      WHERE username LIKE $1;`,
+      `SELECT "istId"
+      FROM public.admins
+      WHERE "istId" LIKE $1;`,
       [username]
     );
     [admin,] = adminResult.rows;
@@ -198,9 +195,9 @@ const checkGACMember = async (username) => {
   let gac;
   try {
     const gacResult = await db.query(
-      `SELECT username
-      FROM "gacMembers"
-      WHERE username LIKE $1;`,
+      `SELECT "istId"
+      FROM public.gac_members
+      WHERE "istId" LIKE $1;`,
       [username]
     );
     [gac,] = gacResult.rows;
@@ -214,9 +211,9 @@ const checkCoordenator = async (username) => {
   let coor;
   try {
     const coorResult = await db.query(
-      `SELECT username
-      FROM coordenators
-      WHERE username LIKE $1;`,
+      `SELECT "istId"
+      FROM neiist.coordenators
+      WHERE "istId" LIKE $1;`,
       [username]
     );
     [coor,] = coorResult.rows;
