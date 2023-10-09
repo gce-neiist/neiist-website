@@ -26,10 +26,10 @@ const setTheses = async (theses) => {
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
-    await client.query('TRUNCATE TABLE theses CASCADE');
+    await client.query('TRUNCATE TABLE thesis_master.theses CASCADE');
 
     theses.forEach(async (thesis) => {
-      await client.query('INSERT INTO theses VALUES($1, $2, $3::text[], $4, $5, $6, $7, $8, $9, $10)',
+      await client.query('INSERT INTO thesis_master.theses VALUES($1, $2, $3::text[], $4, $5, $6, $7, $8, $9, $10)',
         [thesis.id,
           thesis.title,
           thesis.supervisors,
@@ -55,7 +55,7 @@ const setTheses = async (theses) => {
 const getTheses = async () => {
   let theses;
   try {
-    const thesesResult = await db.query('select * from theses');
+    const thesesResult = await db.query('select * from thesis_master.theses');
     theses = thesesResult.rows;
   } catch (err) {
     console.error(err.message);

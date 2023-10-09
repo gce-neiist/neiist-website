@@ -19,10 +19,10 @@ const setAreas = async (areas) => {
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
-    await client.query('TRUNCATE TABLE areas CASCADE');
+    await client.query('TRUNCATE TABLE thesis_master.areas CASCADE');
 
     areas.forEach(async (area) => {
-      await client.query('INSERT INTO areas VALUES($1, $2, $3)', [area.code, area.short, area.long]);
+      await client.query('INSERT INTO thesis_master.areas VALUES($1, $2, $3)', [area.code, area.short, area.long]);
     });
 
     await client.query('COMMIT');
@@ -37,7 +37,7 @@ const setAreas = async (areas) => {
 const getAreas = async () => {
   let areas;
   try {
-    const areasResult = await db.query('SELECT * FROM areas');
+    const areasResult = await db.query('SELECT * FROM thesis_master.areas');
     areas = areasResult.rows;
   } catch (err) {
     console.error(err.message);
