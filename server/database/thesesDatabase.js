@@ -3,18 +3,18 @@ const db = require('./database');
 const createTheses = async () => {
   try {
     await db.query(
-      `CREATE TABLE theses(
-                id integer PRIMARY KEY,
-                title text,
-                supervisors text[],
-                vacancies integer,
-                location text,
-                observations text,
-                objectives text,
-                requirements text,
-                area1 varchar(10) REFERENCES areas(code) ON DELETE CASCADE ON UPDATE CASCADE,
-                area2 varchar(10) REFERENCES areas(code) ON DELETE CASCADE ON UPDATE CASCADE
-            )`,
+      `CREATE TABLE thesis_master.theses(
+        id integer PRIMARY KEY,
+        title text,
+        supervisors text[],
+        vacancies integer,
+        location text,
+        observations text,
+        objectives text,
+        requirements text,
+        area1 varchar(10) REFERENCES thesis_master.areas(code) ON DELETE CASCADE ON UPDATE CASCADE,
+        area2 varchar(10) REFERENCES thesis_master.areas(code) ON DELETE CASCADE ON UPDATE CASCADE
+      );`,
     );
   } catch (err) {
     if (err.code === '42P07') ; // table already exists

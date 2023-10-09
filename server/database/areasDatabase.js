@@ -3,11 +3,11 @@ const db = require('./database');
 const createAreas = async () => {
   try {
     await db.query(
-      `CREATE TABLE areas (
-                code varchar(10) PRIMARY KEY,
-                short varchar(10),
-                long varchar(100)
-            )`,
+      `CREATE TABLE thesis_master.areas (
+        code varchar(10) PRIMARY KEY,
+        short varchar(10),
+        long text
+      );`,
     );
   } catch (err) {
     if (err.code === '42P07') ; // table already exists
