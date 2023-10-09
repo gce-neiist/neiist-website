@@ -3,34 +3,19 @@ const db = require('./database');
 const createMembers = async () => {
   try {
     await db.query(
-      `CREATE TABLE members(
-                "username" varchar(10) PRIMARY KEY,
-                "name" varchar(255),
-                "email" varchar(255),
-                "courses" varchar(33),
-                "registerDate" date,
-                "canVoteDate" date,
-                "renewStartDate" date,
-                "renewEndDate" date
-            )`,
-    );
-  } catch (err) {
-    if (err.code === '42P07') ; // table already exists
-    else { console.error(err); }
-  }
-};
-
-const createRenewalNotifications = async () => {
-  try {
-    await db.query(
-      `CREATE TABLE "renewalNotifications" (
-        "username" varchar(10) PRIMARY KEY,
-        FOREIGN KEY (username) REFERENCES members(username)
-      )`,
+      `CREATE TABLE members.users(
+        "istId" varchar(10) PRIMARY KEY REFERENCES public.users("istId"),
+        "registerDate" date NOT NULL,
+        "electorDate" date NOT NULL,
+        "startRenewalDate" date,
+        "endRenewalDate" date,
+        "renewalNotification" boolean DEFAULT FALSE
+      );`,
     );
     await createRenewalNotificationsTrigger();
   } catch (err) {
-    if (err.code !== '42P07') console.error(err); 
+    if (err.code === '42P07') ; // table already exists
+    else { console.error(err); }
   }
 };
 
@@ -39,8 +24,8 @@ const createRenewalNotificationsTrigger = async () => {
     await db.query(
       `CREATE OR REPLACE FUNCTION remove_expired_warned_users() RETURNS TRIGGER AS $$
       BEGIN
-        DELETE FROM "renewalNotifications"
-        WHERE username IN (SELECT username FROM members WHERE "renewEndDate" < CURRENT_DATE);
+        UPDATE FROM members.users SET "renewalNotification" = FALSE
+        WHERE "istId" IN (SELECT "istId" FROM members.users WHERE "endRenewalDate" < CURRENT_DATE);
         RETURN OLD;
       END;
       $$ LANGUAGE plpgsql;
@@ -58,15 +43,12 @@ const createRenewalNotificationsTrigger = async () => {
 
 const createMember = async (member) => {
   try {
-    await db.query("INSERT INTO members VALUES($1, $2, $3, $4, $5, $6, $7, $8)", [
+    await db.query("INSERT INTO members.users VALUES($1, $2, $3, $4, $5)", [
       member.username,
-      member.name,
-      member.email,
-      member.courses,
       member.registerDate,
-      member.canVoteDate,
-      member.renewStartDate,
-      member.renewEndDate,
+      member.electorDate,
+      member.startRenewalDate,
+      member.endRenewalDate,
     ]);
   } catch (err) {
     console.error(err);
@@ -76,15 +58,12 @@ const createMember = async (member) => {
 const updateMember = async (member) => {
   try {
     await db.query(
-      'UPDATE members SET "name" = $1, "email" = $2, "courses" = $3, "registerDate" = $4::date, "canVoteDate" = $5::date, "renewStartDate" = $6::date, "renewEndDate" = $7::date WHERE "username" = $8',
+      'UPDATE members.users SET "registerDate" = $1::date, "electorDate" = $2::date, "startRenewalDate" = $3::date, "endRenewalDate" = $4::date WHERE "istId" = $5',
       [
-        member.name,
-        member.email,
-        member.courses,
         member.registerDate,
-        member.canVoteDate,
-        member.renewStartDate,
-        member.renewEndDate,
+        member.electorDate,
+        member.startRenewalDate,
+        member.endRenewalDate,
         member.username,
       ]
     );
@@ -97,7 +76,7 @@ const getMember = async (username) => {
   let member;
   try {
     const memberResult = await db.query(
-      'SELECT * FROM members WHERE "username" = $1',
+      'SELECT * FROM members.users WHERE "istId" = $1',
       [username]
     );
     [member] = memberResult.rows;
@@ -111,9 +90,9 @@ const getActiveMembers = async (currDate, limitDate) => {
   let activeMembers;
   try {
     const activeMembersResult = await db.query(
-      'SELECT * FROM members \
-        WHERE "registerDate" > $1::date AND "renewEndDate" > $2::date \
-        ORDER BY length(username), username',
+      'SELECT * FROM members.users \
+        WHERE "registerDate" > $1::date AND "endRenewalDate" > $2::date \
+        ORDER BY length("istId"), "istId"',
       [limitDate, currDate]
     );
     activeMembers = activeMembersResult.rows;
@@ -127,7 +106,7 @@ const getAllMembers = async () => {
   let allMembers;
   try {
     const allMembersResult = await db.query(
-      'SELECT * FROM members ORDER BY length(username), username'
+      'SELECT * FROM members.users ORDER BY length("istId"), "istId"'
     );
     allMembers = allMembersResult.rows;
   } catch (err) {
@@ -140,7 +119,7 @@ const getRenewalNotifications = async () => {
   let members;
   try {
     const memberResult = await db.query(
-      'SELECT * FROM "renewalNotifications"',
+      'SELECT * FROM members.users WHERE "renewalNotification" = TRUE',
     );
     members = memberResult.rows;
   } catch (err) {
@@ -151,7 +130,7 @@ const getRenewalNotifications = async () => {
 
 const addRenewalNotification = async (username) => {
   try {
-    await db.query('INSERT INTO "renewalNotifications" VALUES ($1)', [username]);
+    await db.query('UPDATE members.users SET "renewalNotifications" = TRUE WHERE "istId"=$1;', [username]);
   } catch (err) {
     console.error(err);
   }
@@ -159,7 +138,7 @@ const addRenewalNotification = async (username) => {
 
 const removeRenewalNotification = async (username) => {
   try {
-    await db.query('DELETE FROM "renewalNotifications" WHERE "username" = $1', [username]);
+    await db.query('UPDATE members.users SET "renewalNotifications" = False WHERE "istId"=$1', [username]);
   } catch (err) {
     console.error(err);
   }
@@ -172,7 +151,6 @@ module.exports = {
   getMember,
   getActiveMembers,
   getAllMembers,
-  createRenewalNotifications,
   addRenewalNotification,
   removeRenewalNotification,
   getRenewalNotifications,
