@@ -3,13 +3,12 @@ const db = require('./database');
 const createElections = async () => {
   try {
     await db.query(
-      `CREATE TABLE elections(
-                id serial PRIMARY KEY,
-                name varchar(100),
-                "startDate" date,
-                "endDate" date
-
-            )`,
+      `CREATE TABLE elections.events(
+        id serial PRIMARY KEY,
+        name text,
+        "startDate" date,
+        "endDate" date
+      );`,
     );
   } catch (err) {
     if (err.code === '42P07') ; // table already exists
@@ -20,11 +19,11 @@ const createElections = async () => {
 const createOptions = async () => {
   try {
     await db.query(
-      `CREATE TABLE options(
-                id serial PRIMARY KEY,
-                name varchar(100),
-                "electionId" INTEGER REFERENCES elections(id) ON DELETE CASCADE ON UPDATE CASCADE
-            )`,
+      `CREATE TABLE elections.options(
+        id serial PRIMARY KEY,
+        name text,
+        "electionId" INTEGER REFERENCES elections.events(id) ON DELETE CASCADE ON UPDATE CASCADE
+      );`,
     );
   } catch (err) {
     if (err.code === '42P07') ; // table already exists
@@ -35,12 +34,12 @@ const createOptions = async () => {
 const createVotes = async () => {
   try {
     await db.query(
-      `CREATE TABLE votes(
-        username varchar(9),
-        "electionId" INTEGER REFERENCES elections(id) ON DELETE CASCADE ON UPDATE CASCADE,
-                "optionId" INTEGER REFERENCES options(id) ON DELETE CASCADE ON UPDATE CASCADE,
-                PRIMARY KEY (username, "electionId")
-                )`,
+      `CREATE TABLE elections.votes(
+        "istId" varchar(10) REFERENCES public.users("istId"),
+        "electionId" INTEGER REFERENCES elections.events(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        "optionId" INTEGER REFERENCES elections.options(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        PRIMARY KEY ("istId", "electionId")
+      );`,
     );
   } catch (err) {
     if (err.code === '42P07') ; // table already exists
@@ -50,7 +49,7 @@ const createVotes = async () => {
 
 const addOption = async (electionId, optionName) => {
   try {
-    db.query('INSERT INTO options(name, "electionId") VALUES($1, $2)', [optionName, electionId]);
+    db.query('INSERT INTO elections.options(name, "electionId") VALUES($1, $2)', [optionName, electionId]);
   } catch (err) {
     console.error(err);
   }
@@ -58,7 +57,7 @@ const addOption = async (electionId, optionName) => {
 
 const createElection = async (election) => {
   try {
-    const createdElectionResult = await db.query('INSERT INTO elections(name, "startDate", "endDate") VALUES($1, $2, $3) RETURNING *', [election.name, election.startDate, election.endDate]);
+    const createdElectionResult = await db.query('INSERT INTO elections.events(name, "startDate", "endDate") VALUES($1, $2, $3) RETURNING *', [election.name, election.startDate, election.endDate]);
     const [createdElection] = createdElectionResult.rows;
     const electionId = createdElection.id;
     election.options.forEach((optionName) => addOption(electionId, optionName));
@@ -72,7 +71,7 @@ const getVotes = async (electionId, optionId) => {
   try {
     const votesResult = await db.query(
       `SELECT COUNT(*)
-      FROM votes
+      FROM eletions.votes
       WHERE "electionId"=$1
       AND "optionId"=$2;`,
       [electionId, optionId],
@@ -87,7 +86,7 @@ const getVotes = async (electionId, optionId) => {
 const getOptions = async (electionId) => {
   let optionsVotes;
   try {
-    const optionsResult = await db.query('SELECT * FROM options WHERE "electionId"=$1', [electionId]);
+    const optionsResult = await db.query('SELECT * FROM elections.options WHERE "electionId"=$1', [electionId]);
     const options = optionsResult.rows;
     optionsVotes = await Promise.all(options.map(async (option) => {
       const optionVotes = option;
@@ -103,7 +102,7 @@ const getOptions = async (electionId) => {
 const getActiveElections = async (currDate) => {
   let electionsOptions;
   try {
-    const electionsResult = await db.query('SELECT * FROM elections WHERE $1 BETWEEN "startDate" AND "endDate" ', [currDate]);
+    const electionsResult = await db.query('SELECT * FROM elections.events WHERE $1 BETWEEN "startDate" AND "endDate" ', [currDate]);
     const elections = electionsResult.rows;
     electionsOptions = await Promise.all(elections.map(async (election) => {
       const electionOptions = election;
@@ -119,7 +118,7 @@ const getActiveElections = async (currDate) => {
 const getAllElections = async () => {
   let electionsOptions;
   try {
-    const electionsResult = await db.query('SELECT * FROM elections');
+    const electionsResult = await db.query('SELECT * FROM elections.events');
     const elections = electionsResult.rows;
     electionsOptions = await Promise.all(elections.map(async (election) => {
       const electionOptions = election;
@@ -134,7 +133,7 @@ const getAllElections = async () => {
 
 const createVote = async (electionId, vote) => {
   try {
-    await db.query('INSERT INTO votes values($1, $2, $3)', [vote.username, electionId, vote.optionId]);
+    await db.query('INSERT INTO elections.votes values($1, $2, $3)', [vote.username, electionId, vote.optionId]);
   } catch (err) {
     console.error(err);
   }
