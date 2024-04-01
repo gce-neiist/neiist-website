@@ -1,23 +1,26 @@
 {
   "name": "neiist-website-client",
   "proxy": "http://localhost:3001",
+  "type": "module",
   "dependencies": {
-    "axios": "0.27.2",
-    "bootstrap": "5.2.3",
-    "html-react-parser": "^3.0.12",
+    "@mantine/core": "^6.0.8",
+    "@mantine/hooks": "^6.0.8",
+    "axios": "1.6.8",
+    "bootstrap": "5.3.3",
+    "html-react-parser": "^5.0.0",
     "react": "18.2.0",
-    "react-bootstrap": "2.7.4",
+    "react-bootstrap": "2.10.2",
     "react-device-detect": "^2.2.2",
     "react-dom": "18.2.0",
-    "react-icons": "^4.4.0",
+    "react-icons": "^5.0.0",
     "react-multi-carousel": "^2.8.2",
-    "react-router-dom": "6.11.0",
+    "react-router-dom": "6.22.3",
     "react-scripts": "^5.0.1",
     "react-select": "^5.7.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.0/xlsx-0.20.0.tgz"
   },
   "overrides": {
-    "autoprefixer": "10.4.14"
+    "autoprefixer": "10.4.19"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -40,5 +43,10 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "axios": "axios/dist/node/axios.cjs"
+    }
   }
 }
